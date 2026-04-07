@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Finance Dashboard
 
-## Getting Started
+A clean, minimalist, and secure personal finance tracking dashboard. Built to monitor daily expenses and income, complete with data visualization and secure user authentication.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **Secure Authentication:** User login and session management securely handled by Supabase Auth.
+* **Data Aggregation:** Real-time calculation of total balance, income, and expenses.
+* **Data Visualization:** Interactive donut chart for expense categorization using Recharts.
+* **CRUD Operations:** Seamless addition of new financial transactions.
+* **Data Privacy:** Implemented Row Level Security (RLS) in PostgreSQL to ensure user data isolation.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **Frontend:** Next.js (App Router), React, TypeScript
+* **Styling:** Tailwind CSS, Lucide React (Icons)
+* **Visualization:** Recharts
+* **Backend & Database:** Supabase (PostgreSQL)
+* **Deployment:** Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database Schema
 
-## Learn More
+The application relies on a structured PostgreSQL database hosted on Supabase.
 
-To learn more about Next.js, take a look at the following resources:
+**Table: `transactions`**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Column        | Type        | Default Value  | Description                          |
+| :------------ | :---------- | :------------- | :----------------------------------- |
+| `id`          | `uuid`      | `gen_random_uuid()` | Unique transaction identifier.  |
+| `date`        | `date`      | `now()`        | Date of the transaction.             |
+| `amount`      | `int8`      | `0`            | Transaction value in IDR.            |
+| `description` | `text`      | `null`         | Details of the transaction.          |
+| `category`    | `text`      | `null`         | E.g., Food, Transport, Salary.       |
+| `type`        | `text`      | `null`         | 'income' or 'expense'.               |
+| `user_id`     | `uuid`      | `auth.uid()`   | Foreign key to Supabase Auth users.  |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> **Note on Security:** Row Level Security (RLS) is strictly enforced on this table. Users can only `SELECT` and `INSERT` records where `user_id` matches their authenticated session.
 
-## Deploy on Vercel
+## Local Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To run this project locally, follow these steps:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/](https://github.com/)[username-github-kamu]/personal-finance-dashboard.git
+   cd personal-finance-dashboard

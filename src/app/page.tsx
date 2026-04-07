@@ -68,7 +68,9 @@ const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => 
           <tbody className="text-sm">
             {transactions.map((trx) => (
               <tr key={trx.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-gray-500">{trx.date}</td>
+                <td className="px-6 py-4 text-gray-500">
+                  {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(trx.date))}
+                </td>
                 <td className="px-6 py-4 font-medium text-brand-dark">{trx.description}</td>
                 <td className="px-6 py-4">
                   <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">
@@ -113,11 +115,30 @@ const ExpenseByCategoryChart = ({ data }: ExpenseByCategoryChartProps) => {
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
+                innerRadius={50}
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
                 stroke="none"
+                labelLine={{ stroke: '#1F2937', strokeWidth: 1, strokeOpacity: 0.3 }}
+                label={(props: any) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = props.outerRadius + 15;
+                  const x = props.cx + radius * Math.cos(-props.midAngle * RADIAN);
+                  const y = props.cy + radius * Math.sin(-props.midAngle * RADIAN);
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill="#1F2937"
+                      textAnchor={x > props.cx ? 'start' : 'end'}
+                      dominantBaseline="central"
+                      className="text-xs font-medium"
+                    >
+                      {props.name}
+                    </text>
+                  );
+                }}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -159,7 +180,7 @@ export default function App() {
       .from('transactions')
       .select('*')
       .order('date', { ascending: false });
-    
+
     if (!error && data) {
       setTransactions(data as Transaction[]);
     } else if (error) {
@@ -199,9 +220,9 @@ export default function App() {
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.user) return;
-    
+
     setIsSubmitting(true);
-    
+
     const newTransaction = {
       date: formData.date,
       description: formData.description,
@@ -222,7 +243,7 @@ export default function App() {
     } else {
       console.error("Error adding transaction:", error.message);
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -282,13 +303,13 @@ export default function App() {
             <p className="text-gray-500 mt-1">Ringkasan pengeluaran dan pemasukan kamu.</p>
           </div>
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="bg-brand-dark text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
               Tambah Transaksi
             </button>
-            <button 
+            <button
               onClick={handleLogout}
               className="text-brand-dark text-sm font-medium hover:underline"
             >
@@ -372,6 +393,7 @@ export default function App() {
                     <option value="Transport">Transport</option>
                     <option value="Utilities">Utilities</option>
                     <option value="Salary">Salary</option>
+                    <option value="Skincare">Skincare</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

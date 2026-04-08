@@ -1,5 +1,7 @@
 # Personal Finance Dashboard
 
+![alt text](image.png)
+
 A clean, minimalist, and secure personal finance tracking dashboard. Built to monitor daily expenses and income, complete with data visualization and secure user authentication.
 
 ## Features

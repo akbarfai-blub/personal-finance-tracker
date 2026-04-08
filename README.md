@@ -5,15 +5,20 @@ A clean, minimalist, and secure personal finance tracking dashboard. Built to mo
 ## Features
 
 * **Secure Authentication:** User login and session management securely handled by Supabase Auth.
-* **Data Aggregation:** Real-time calculation of total balance, income, and expenses.
-* **Data Visualization:** Interactive donut chart for expense categorization using Recharts.
-* **CRUD Operations:** Seamless addition of new financial transactions.
+* **Data Aggregation & Filters:** Real-time calculation of total balance, income, and expenses synchronized with a Global Time Filter.
+* **Data Visualization:** 
+  * Interactive donut chart for expense categorization using Recharts.
+  * Time-series trend chart (Bar & Line toggles) for daily cash flow insights.
+* **Transaction Management:** Seamless addition and deletion of financial transactions with precise IDR input masking.
+* **UI/UX Polished:** 
+  * Full System Dark / Light mode integrated via `next-themes` mapped with exact Recharts adaptions.
+  * Sticky Glassmorphism Header and fully localized Indonesian interface.
 * **Data Privacy:** Implemented Row Level Security (RLS) in PostgreSQL to ensure user data isolation.
 
 ## Tech Stack
 
 * **Frontend:** Next.js (App Router), React, TypeScript
-* **Styling:** Tailwind CSS, Lucide React (Icons)
+* **Styling:** Tailwind CSS v4, Lucide React (Icons), Next-Themes
 * **Visualization:** Recharts
 * **Backend & Database:** Supabase (PostgreSQL)
 * **Deployment:** Vercel

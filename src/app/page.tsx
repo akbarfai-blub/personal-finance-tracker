@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
-import { Transaction } from '../types/transaction';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, Trash2 } from 'lucide-react';
+import { Transaction, TRANSLASI_TIPE, TRANSLASI_KATEGORI } from '../types/transaction';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/lib/supabase';
 import { LoginForm } from '@/components/LoginForm';
+import { TrendChart } from '@/components/TrendChart';
+import { DonutChart } from '@/components/DonutChart';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import type { Session } from '@supabase/supabase-js';
 
 // --- UTILITIES ---
@@ -33,14 +36,14 @@ const SummaryCard = ({ title, amount, icon, type }: SummaryCardProps) => {
   const isExpense = type === 'expense';
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-colors">
       <div>
-        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-brand-dark">{formatCurrency(amount)}</h3>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-brand-dark dark:text-gray-100">{formatCurrency(amount)}</h3>
       </div>
-      <div className={`p-3 rounded-full ${isIncome ? 'bg-green-100 text-green-600' :
-        isExpense ? 'bg-red-100 text-red-600' :
-          'bg-blue-100 text-blue-600'
+      <div className={`p-3 rounded-full transition-colors ${isIncome ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+        isExpense ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+          'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
         }`}>
         {icon}
       </div>
@@ -49,37 +52,58 @@ const SummaryCard = ({ title, amount, icon, type }: SummaryCardProps) => {
 };
 
 // 2. Transaction Table Component
-const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => {
+const TransactionTable = ({ transactions, onDelete, isDataLoading }: { transactions: Transaction[], onDelete: (id: string) => void, isDataLoading: boolean }) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-brand-dark">Transaksi Terbaru</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col max-h-[600px] transition-colors">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 shrink-0 transition-colors">
+        <h2 className="text-lg font-bold text-brand-dark dark:text-gray-100">Transaksi Terbaru</h2>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1 relative">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-sm">
+          <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 shadow-sm border-b border-gray-100 dark:border-gray-700 transition-colors">
+            <tr className="text-gray-500 dark:text-gray-400 text-sm">
               <th className="px-6 py-3 font-medium">Tanggal</th>
-              <th className="px-6 py-3 font-medium">Deskripsi</th>
+              <th className="px-6 py-3 font-medium">Keterangan</th>
               <th className="px-6 py-3 font-medium">Kategori</th>
-              <th className="px-6 py-3 font-medium text-right">Jumlah</th>
+              <th className="px-6 py-3 font-medium text-right">Nominal</th>
+              <th className="px-6 py-3 font-medium w-10"></th>
             </tr>
           </thead>
           <tbody className="text-sm">
-            {transactions.map((trx) => (
-              <tr key={trx.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-gray-500">
+            {isDataLoading ? (
+               <tr>
+                 <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 font-medium">
+                   Memuat data...
+                 </td>
+               </tr>
+            ) : transactions.length === 0 ? (
+               <tr>
+                 <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 font-medium">
+                   Belum ada transaksi.
+                 </td>
+               </tr>
+            ) : transactions.map((trx) => (
+              <tr key={trx.id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                   {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(trx.date))}
                 </td>
-                <td className="px-6 py-4 font-medium text-brand-dark">{trx.description}</td>
+                <td className="px-6 py-4 font-medium text-brand-dark dark:text-gray-200">{trx.description}</td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">
-                    {trx.category}
+                  <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium transition-colors">
+                    {TRANSLASI_KATEGORI[trx.category] || trx.category}
                   </span>
                 </td>
-                <td className={`px-6 py-4 text-right font-bold ${trx.type === 'income' ? 'text-green-600' : 'text-brand-dark'
-                  }`}>
+                <td className={`px-6 py-4 text-right font-bold ${trx.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-brand-dark dark:text-gray-200'}`}>
                   {trx.type === 'income' ? '+' : '-'}{formatCurrency(trx.amount)}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button 
+                    onClick={() => onDelete(trx.id)}
+                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    title="Hapus Transaksi"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -90,81 +114,13 @@ const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => 
   );
 };
 
-// 3. Expense By Category Chart Component
-interface ChartData {
-  name: string;
-  value: number;
-}
-
-interface ExpenseByCategoryChartProps {
-  data: ChartData[];
-}
-
-// Profesional pastel/blue/purple palette
-const COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981', '#F43F5E', '#06B6D4'];
-
-const ExpenseByCategoryChart = ({ data }: ExpenseByCategoryChartProps) => {
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-      <h2 className="text-lg font-bold text-brand-dark mb-6">Pengeluaran per Kategori</h2>
-      <div className="flex-1 w-full min-h-[300px]">
-        {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-                stroke="none"
-                labelLine={{ stroke: '#1F2937', strokeWidth: 1, strokeOpacity: 0.3 }}
-                label={(props: any) => {
-                  const RADIAN = Math.PI / 180;
-                  const radius = props.outerRadius + 15;
-                  const x = props.cx + radius * Math.cos(-props.midAngle * RADIAN);
-                  const y = props.cy + radius * Math.sin(-props.midAngle * RADIAN);
-                  return (
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#1F2937"
-                      textAnchor={x > props.cx ? 'start' : 'end'}
-                      dominantBaseline="central"
-                      className="text-xs font-medium"
-                    >
-                      {props.name}
-                    </text>
-                  );
-                }}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) => formatCurrency(value as number)}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-            Belum ada data pengeluaran
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // --- MAIN APP (PAGES) ---
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [timeFilter, setTimeFilter] = useState<'7 Hari Terakhir' | 'Bulan Ini' | 'Semua Waktu'>('Semua Waktu');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -176,6 +132,7 @@ export default function App() {
   });
 
   const fetchTransactions = async () => {
+    setIsDataLoading(true);
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -185,6 +142,23 @@ export default function App() {
       setTransactions(data as Transaction[]);
     } else if (error) {
       console.error("Error fetching transactions:", error.message);
+    }
+    setIsDataLoading(false);
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (!confirm('Apakah yakin ingin menghapus transaksi ini?')) return;
+    setIsDataLoading(true);
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+    
+    if (!error) {
+      await fetchTransactions();
+    } else {
+      console.error("Error deleting transaction:", error.message);
+      setIsDataLoading(false);
     }
   };
 
@@ -224,10 +198,10 @@ export default function App() {
     setIsSubmitting(true);
 
     const newTransaction = {
-      date: formData.date,
+      date: new Date(`${formData.date}T12:00:00`).toISOString(),
       description: formData.description,
       category: formData.category,
-      amount: Number(formData.amount),
+      amount: Number(formData.amount.replace(/\./g, '')),
       type: formData.type,
       user_id: session.user.id
     };
@@ -247,10 +221,26 @@ export default function App() {
     setIsSubmitting(false);
   };
 
+  // Logic: Filter transaksi global berdasar timeFilter
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    return transactions.filter(trx => {
+      const trxDate = new Date(trx.date);
+      if (timeFilter === '7 Hari Terakhir') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return trxDate >= sevenDaysAgo;
+      } else if (timeFilter === 'Bulan Ini') {
+        return trxDate.getMonth() === now.getMonth() && trxDate.getFullYear() === now.getFullYear();
+      }
+      return true; // 'Semua Waktu'
+    });
+  }, [transactions, timeFilter]);
+
   // Logic: Agregasi Data (Data Analyst approach)
   // Menggunakan useMemo agar kalkulasi hanya berjalan jika data berubah
   const summary = useMemo(() => {
-    return transactions.reduce(
+    return filteredTransactions.reduce(
       (acc, trx) => {
         if (trx.type === 'income') acc.income += trx.amount;
         if (trx.type === 'expense') acc.expense += trx.amount;
@@ -259,29 +249,13 @@ export default function App() {
       },
       { income: 0, expense: 0, balance: 0 }
     );
-  }, [transactions]);
-
-  // Logic: Agregasi Data Pengeluaran per Kategori
-  const expenseByCategoryData = useMemo(() => {
-    const expenseData = transactions.filter(trx => trx.type === 'expense');
-    const aggregated = expenseData.reduce((acc, trx) => {
-      acc[trx.category] = (acc[trx.category] || 0) + trx.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.keys(aggregated)
-      .map(category => ({
-        name: category,
-        value: aggregated[category]
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   // Guard: Jika loading
   if (isSessionLoading) {
     return (
-      <div className="min-h-screen bg-brand-light flex items-center justify-center font-sans">
-        <p className="text-brand-dark font-medium">Memuat...</p>
+      <div className="min-h-screen bg-brand-light dark:bg-gray-900 flex items-center justify-center font-sans">
+        <p className="text-brand-dark dark:text-gray-400 font-medium">Memuat...</p>
       </div>
     );
   }
@@ -293,25 +267,35 @@ export default function App() {
 
   return (
     // Implementasi warna identity: bg-brand-light dan text-brand-dark
-    <div className="min-h-screen bg-brand-light text-brand-dark p-8 font-sans">
+    <div className="min-h-screen bg-brand-light dark:bg-gray-900 text-brand-dark dark:text-gray-100 p-8 font-sans transition-colors">
       <div className="max-w-5xl mx-auto">
 
         {/* Header Section */}
-        <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <header className="sticky top-0 z-40 bg-brand-light/90 dark:bg-gray-900/90 backdrop-blur-md pt-4 pb-4 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-transparent dark:border-transparent transition-colors">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Dashboard Keuangan</h1>
-            <p className="text-gray-500 mt-1">Ringkasan pengeluaran dan pemasukan kamu.</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Ringkasan pengeluaran dan pemasukan kamu.</p>
           </div>
           <div className="flex items-center gap-4">
+            <select 
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value as any)}
+              className="text-sm font-medium px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-600 cursor-pointer transition-colors"
+            >
+              <option value="7 Hari Terakhir">7 Hari Terakhir</option>
+              <option value="Bulan Ini">Bulan Ini</option>
+              <option value="Semua Waktu">Semua Waktu</option>
+            </select>
+            <ThemeToggle />
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-brand-dark text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              className="bg-brand-dark dark:bg-gray-800 text-white dark:text-gray-100 px-4 py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-700 border border-transparent dark:border-gray-700 transition-colors"
             >
               Tambah Transaksi
             </button>
             <button
               onClick={handleLogout}
-              className="text-brand-dark text-sm font-medium hover:underline"
+              className="text-brand-dark dark:text-gray-400 text-sm font-medium hover:underline transition-colors"
             >
               Logout
             </button>
@@ -340,16 +324,23 @@ export default function App() {
           />
         </div>
 
+        {/* Trend Chart Section */}
+        <TrendChart transactions={filteredTransactions} />
+
         {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Transaction List Section */}
           <div className="lg:col-span-2">
-            <TransactionTable transactions={transactions} />
+            <TransactionTable 
+              transactions={filteredTransactions} 
+              onDelete={handleDeleteTransaction}
+              isDataLoading={isDataLoading}
+            />
           </div>
 
           {/* Expense Chart Section */}
           <div>
-            <ExpenseByCategoryChart data={expenseByCategoryData} />
+            <DonutChart transactions={filteredTransactions} />
           </div>
         </div>
 
@@ -358,82 +349,85 @@ export default function App() {
       {/* Add Transaction Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-brand-light rounded-xl shadow-lg p-6 w-full max-w-md border border-gray-200">
-            <h2 className="text-xl font-bold text-brand-dark mb-4">Tambah Transaksi Baru</h2>
+          <div className="bg-brand-light dark:bg-gray-900 rounded-xl shadow-lg p-6 w-full max-w-md border border-gray-200 dark:border-gray-700 transition-colors">
+            <h2 className="text-xl font-bold text-brand-dark dark:text-gray-100 mb-4">Tambah Transaksi Baru</h2>
             <form onSubmit={handleAddTransaction} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-brand-dark mb-1">Date</label>
+                <label className="block text-sm font-medium text-brand-dark dark:text-gray-300 mb-1">Tanggal</label>
                 <input
                   type="date"
                   required
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg bg-white text-brand-dark focus:ring-2 focus:ring-brand-dark focus:outline-none"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-brand-dark dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-brand-dark mb-1">Description</label>
+                <label className="block text-sm font-medium text-brand-dark dark:text-gray-300 mb-1">Keterangan</label>
                 <input
                   type="text"
+                  placeholder="Masukkan keterangan"
                   required
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg bg-white text-brand-dark focus:ring-2 focus:ring-brand-dark focus:outline-none"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-brand-dark dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:outline-none transition-colors"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-brand-dark mb-1">Category</label>
+                  <label className="block text-sm font-medium text-brand-dark dark:text-gray-300 mb-1">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg bg-white text-brand-dark focus:ring-2 focus:ring-brand-dark focus:outline-none"
+                    className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-brand-dark dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:outline-none transition-colors"
                   >
-                    <option value="Food">Food</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Salary">Salary</option>
-                    <option value="Skincare">Skincare</option>
-                    <option value="Other">Other</option>
+                    {Object.entries(TRANSLASI_KATEGORI).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-brand-dark mb-1">Type</label>
+                  <label className="block text-sm font-medium text-brand-dark dark:text-gray-300 mb-1">Tipe</label>
                   <select
                     value={formData.type}
                     onChange={e => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg bg-white text-brand-dark focus:ring-2 focus:ring-brand-dark focus:outline-none"
+                    className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-brand-dark dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:outline-none transition-colors"
                   >
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
+                    <option value="expense">{TRANSLASI_TIPE.expense}</option>
+                    <option value="income">{TRANSLASI_TIPE.income}</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-brand-dark mb-1">Amount</label>
+                <label className="block text-sm font-medium text-brand-dark dark:text-gray-300 mb-1">Nominal</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Masukkan nominal"
                   required
-                  min="0"
                   value={formData.amount}
-                  onChange={e => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg bg-white text-brand-dark focus:ring-2 focus:ring-brand-dark focus:outline-none"
+                  onChange={e => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    const formattedValue = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    setFormData({ ...formData, amount: formattedValue });
+                  }}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-brand-dark dark:text-gray-100 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:outline-none transition-colors"
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-brand-dark font-medium border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 text-brand-dark dark:text-gray-300 font-medium border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-brand-dark text-brand-light font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-brand-dark dark:bg-gray-100 text-brand-light dark:text-brand-dark font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-white transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Menyimpan...' : 'Save'}
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>
